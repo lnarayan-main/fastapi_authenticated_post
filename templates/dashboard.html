@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | PostApp{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="fw-bold">Your Dashboard</h3>
+    <a href="/ui/create-post" class="btn btn-primary">+ Create Post</a>
+</div>
+
+<div id="posts-container" class="row">
+    <div class="text-center mt-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p>Fetching your posts...</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+        window.location.href = '/ui/login';
+    }
+
+    async function fetchPosts() {
+        try {
+            const response = await fetch('/api/posts/get-posts', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const posts = await response.json();
+            renderPosts(posts);
+        } catch (err) {
+            console.error("Failed to fetch posts", err);
+        }
+    }
+
+    function renderPosts(posts) {
+        const container = document.getElementById('posts-container');
+        if (posts.length === 0) {
+            container.innerHTML = `<div class="text-center mt-5"><h5>No posts found. Create one!</h5></div>`;
+            return;
+        }
+
+        container.innerHTML = posts.map(post => `
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body">
+                        <span class="badge bg-info mb-2 text-dark">${post.status}</span>
+                        <h5 class="card-title fw-bold">
+                            <a href="/ui/post-detail/${post.id}" class="text-decoration-none text-dark">${post.title}</a>
+                        </h5>
+                        <p class="card-text text-muted">${post.content.substring(0, 100)}...</p>
+                    </div>
+                    <div class="card-footer bg-white border-0 d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            ${new Date(post.created_at).toLocaleString('en-IN', {
+                                day: '2-digit', month: 'short', year: 'numeric',
+                                hour: '2-digit', minute: '2-digit', hour12: true
+                            })}
+                        </small>
+                        <div>
+                            <a href="/ui/edit-post/${post.id}" class="btn btn-outline-primary btn-sm">Edit</a>
+                            <button class="btn btn-outline-danger btn-sm" onclick="deletePost(${post.id})">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    async function deletePost(id) {
+        if (!confirm("Are you sure you want to delete this post?")) return;
+        
+        const response = await fetch(`/api/posts/delete-post/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.ok) {
+            fetchPosts(); 
+        } else {
+            const err = await response.json();
+            alert(err.detail);
+        }
+    }
+
+    // Initialize
+    fetchPosts();
+</script>
+{% endblock %}

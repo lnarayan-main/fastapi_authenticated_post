@@ -1,0 +1,56 @@
+{% extends "auth_base.html" %}
+
+{% block title %}Login | PostApp{% endblock %}
+
+{% block subtitle %}Sign in to manage your posts{% endblock %}
+
+{% block content %}
+<form id="login-form">
+    <div class="mb-3">
+        <label class="form-label">Email Address</label>
+        <input type="email" id="username" class="form-control form-control-lg" placeholder="name@example.com" required>
+    </div>
+    
+    <div class="mb-3">
+        <label class="form-label">Password</label>
+        <input type="password" id="password" class="form-control form-control-lg" placeholder="••••••••" required>
+    </div>
+    
+    <button type="submit" class="btn btn-primary btn-lg w-100 shadow-sm mt-3">Login</button>
+</form>
+{% endblock %}
+
+{% block footer %}
+<p class="mb-0 text-muted">Don't have an account? <a href="/ui/register" class="text-decoration-none fw-bold">Register here</a></p>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new URLSearchParams();
+        formData.append('username', document.getElementById('username').value);
+        formData.append('password', document.getElementById('password').value);
+        
+        try {
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                document.cookie = `access_token=${data.access_token}; path=/; samesite=strict`;
+                localStorage.setItem('token', data.access_token);
+                window.location.href = '/ui/dashboard';
+            } else {
+                const error = await response.json();
+                alert(error.detail || 'Login failed');
+            }
+        } catch (error) {
+            alert('Network error: ' + error.message);
+        }
+    });
+</script>
+{% endblock %}

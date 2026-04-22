@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Posts App{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <a href="/ui/dashboard" class="text-xl font-bold text-gray-800">Posts App</a>
+                </div>
+                <div id="nav-links">
+                    <!-- Dynamic nav based on login state -->
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <main class="container mx-auto px-4 py-8">
+        {% block content %}{% endblock %}
+    </main>
+
+    <script>
+        // Check if token exists
+        const token = document.cookie.split('; ').find(row => row.startsWith('access_token='));
+        
+        if (token) {
+            document.getElementById('nav-links').innerHTML = `
+                <div class="flex space-x-4">
+                    <a href="/ui/dashboard" class="text-gray-700 hover:text-gray-900">Dashboard</a>
+                    <a href="/ui/create-post" class="text-gray-700 hover:text-gray-900">Create Post</a>
+                    <button onclick="logout()" class="text-red-600 hover:text-red-800">Logout</button>
+                </div>
+            `;
+        } else if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/register')) {
+            document.getElementById('nav-links').innerHTML = `
+                <div class="flex space-x-4">
+                    <a href="/ui/login" class="text-gray-700 hover:text-gray-900">Login</a>
+                    <a href="/ui/register" class="text-gray-700 hover:text-gray-900">Register</a>
+                </div>
+            `;
+        }
+
+        async function logout() {
+            try {
+                const response = await fetch('/api/auth/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token.split('=')[1]}`
+                    }
+                });
+                
+                if (response.ok) {
+                    document.cookie = 'access_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+                    window.location.href = '/ui/login';
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+        }
+    </script>
+</body>
+</html>

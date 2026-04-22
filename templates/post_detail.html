@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Post Detail | PostApp{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-9">
+        <div class="mb-4">
+            <a href="/ui/dashboard" class="text-decoration-none text-muted">← Back to Dashboard</a>
+        </div>
+
+        <div class="card p-5 shadow-sm border-0 rounded-4">
+            <span id="post-status" class="badge bg-primary mb-3 text-uppercase p-2 shadow-sm" style="width: fit-content;"></span>
+            
+            <h1 id="post-title" class="display-4 fw-bold mb-3 text-dark"></h1>
+            
+            <p class="text-muted mb-4 d-flex align-items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-calendar3 me-2" viewBox="0 0 16 16">
+                    <path d="M14 0H2a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zM1 3.857C1 3.384 1.448 3 2 3h12c.552 0 1 .384 1 .857v10.286c0 .473-.448.857-1 .857H2c-.552 0-1-.384-1-.857V3.857z"/>
+                    <path d="M6.5 7a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-9 3a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-9 3a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
+                </svg>
+                <span id="post-date"></span>
+            </p>
+            
+            <hr class="opacity-10">
+            
+            <div id="post-content" class="lead mt-4 text-secondary" style="white-space: pre-wrap; line-height: 1.8;">
+                <div class="placeholder-glow">
+                    <span class="placeholder col-7"></span>
+                    <span class="placeholder col-4"></span>
+                    <span class="placeholder col-4"></span>
+                    <span class="placeholder col-6"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const postId = {{ post_id }};
+    
+    async function loadDetail() {
+        try {
+            const response = await fetch(`/api/posts/post-by-id/${postId}`);
+            if (!response.ok) throw new Error("Post not found");
+            
+            const post = await response.json();
+
+            // Detailed Indian English formatting
+            const dateOptions = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric', 
+                hour: '2-digit', 
+                minute: '2-digit',
+                hour12: true
+            };
+
+            // Update DOM
+            document.getElementById('post-title').innerText = post.title;
+            document.getElementById('post-status').innerText = post.status;
+            document.getElementById('post-date').innerText = new Date(post.created_at).toLocaleString('en-IN', dateOptions);
+            document.getElementById('post-content').innerText = post.content;
+
+            // Change badge color based on status
+            const badge = document.getElementById('post-status');
+            if(post.status === 'Draft') badge.className = 'badge bg-warning text-dark mb-3 text-uppercase p-2 shadow-sm';
+            if(post.status === 'Private') badge.className = 'badge bg-danger mb-3 text-uppercase p-2 shadow-sm';
+
+        } catch (error) {
+            console.error(error);
+            document.getElementById('post-content').innerHTML = `
+                <div class="alert alert-danger">
+                    Failed to load post. It may have been deleted.
+                </div>
+            `;
+        }
+    }
+
+    loadDetail();
+</script>
+{% endblock %}

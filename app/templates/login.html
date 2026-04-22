@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+    <h2 class="text-2xl font-bold mb-6 text-center">Login</h2>
+    
+    <div id="error-message" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4"></div>
+    
+    <form id="login-form">
+        <div class="mb-4">
+            <label class="block text-gray-700 text-sm font-bold mb-2" for="username">
+                Email
+            </label>
+            <input type="email" id="username" name="username" required
+                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        
+        <div class="mb-6">
+            <label class="block text-gray-700 text-sm font-bold mb-2" for="password">
+                Password
+            </label>
+            <input type="password" id="password" name="password" required
+                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        
+        <button type="submit" 
+                class="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-600 transition duration-300">
+            Login
+        </button>
+    </form>
+    
+    <p class="mt-4 text-center text-gray-600">
+        Don't have an account? <a href="/ui/register" class="text-blue-500 hover:text-blue-700">Register</a>
+    </p>
+</div>
+
+<script>
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const formData = new URLSearchParams();
+        formData.append('username', document.getElementById('username').value);
+        formData.append('password', document.getElementById('password').value);
+        
+        try {
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: formData
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                // Store token in cookie
+                document.cookie = `access_token=${data.access_token}; path=/; max-age=3600`;
+                window.location.href = '/ui/dashboard';
+            } else {
+                const error = await response.json();
+                showError(error.detail || 'Login failed');
+            }
+        } catch (error) {
+            showError('Network error. Please try again.');
+        }
+    });
+    
+    function showError(message) {
+        const errorDiv = document.getElementById('error-message');
+        errorDiv.textContent = message;
+        errorDiv.classList.remove('hidden');
+        setTimeout(() => {
+            errorDiv.classList.add('hidden');
+        }, 5000);
+    }
+</script>
+{% endblock %}

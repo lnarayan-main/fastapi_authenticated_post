@@ -1,0 +1,61 @@
+{% extends "auth_base.html" %}
+
+{% block title %}Register | PostApp{% endblock %}
+
+{% block subtitle %}Create your account to start posting{% endblock %}
+
+{% block content %}
+<form id="register-form">
+    <div class="mb-3">
+        <label class="form-label">Full Name</label>
+        <input type="text" id="full_name" class="form-control form-control-lg" placeholder="John Doe" required>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Email Address</label>
+        <input type="email" id="email" class="form-control form-control-lg" placeholder="name@example.com" required>
+    </div>
+    
+    <div class="mb-3">
+        <label class="form-label">Password</label>
+        <input type="password" id="password" class="form-control form-control-lg" placeholder="••••••••" required>
+    </div>
+    
+    <button type="submit" class="btn btn-primary btn-lg w-100 shadow-sm mt-3">Create Account</button>
+</form>
+{% endblock %}
+
+{% block footer %}
+<p class="mb-0 text-muted">Already have an account? <a href="/ui/login" class="text-decoration-none fw-bold">Login here</a></p>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.getElementById('register-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const userData = {
+            email: document.getElementById('email').value,
+            full_name: document.getElementById('full_name').value,
+            password: document.getElementById('password').value
+        };
+        
+        try {
+            const response = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(userData)
+            });
+            
+            if (response.ok) {
+                alert('Registration successful! Please login.');
+                window.location.href = '/ui/login';
+            } else {
+                const error = await response.json();
+                alert(error.detail || 'Registration failed');
+            }
+        } catch (error) {
+            alert('Network error: ' + error.message);
+        }
+    });
+</script>
+{% endblock %}

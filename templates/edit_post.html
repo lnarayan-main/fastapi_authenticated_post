@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Post | PostApp{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="mb-3">
+            <a href="/ui/dashboard" class="text-decoration-none text-muted small">← Back to Dashboard</a>
+        </div>
+
+        <div class="card shadow-sm border-0 p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-bold m-0">Edit Post</h2>
+                <span class="badge bg-secondary" id="post-id-badge">ID: {{ post_id }}</span>
+            </div>
+            
+            <p id="created-info" class="text-muted small mb-4"></p>
+
+            <form id="edit-form">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Title</label>
+                    <input type="text" id="title" class="form-control" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Status</label>
+                    <select id="status" class="form-select">
+                        <option value="Active">Active</option>
+                        <option value="Draft">Draft</option>
+                        <option value="Private">Private</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Content</label>
+                    <textarea id="content" class="form-control" rows="6" required></textarea>
+                </div>
+
+                <div class="d-grid gap-2 mt-4">
+                    <button type="submit" class="btn btn-success btn-lg shadow-sm">Save Changes</button>
+                    <a href="/ui/dashboard" class="btn btn-link text-muted">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const token = localStorage.getItem('token');
+    const postId = {{ post_id }};
+
+    if (!token) {
+        window.location.href = '/ui/login';
+    }
+
+    // Fetch existing data to fill the form
+    async function loadPostData() {
+        try {
+            const response = await fetch(`/api/posts/post-by-id/${postId}`);
+            if (!response.ok) throw new Error("Could not fetch post");
+            
+            const post = await response.json();
+            
+            document.getElementById('title').value = post.title;
+            document.getElementById('status').value = post.status;
+            document.getElementById('content').value = post.content;
+            
+            // Show exact creation time to help user track the 2-hour window
+            const createdDate = new Date(post.created_at).toLocaleString('en-IN', {
+                dateStyle: 'medium',
+                timeStyle: 'short'
+            });
+            document.getElementById('created-info').innerText = `Created on: ${createdDate}`;
+            
+        } catch (err) {
+            alert(err.message);
+            window.location.href = '/ui/dashboard';
+        }
+    }
+
+    document.getElementById('edit-form').onsubmit = async (e) => {
+        e.preventDefault();
+        
+        const formData = new FormData();
+        formData.append('title', document.getElementById('title').value);
+        formData.append('status', document.getElementById('status').value);
+        formData.append('content', document.getElementById('content').value);
+
+        try {
+            const response = await fetch(`/api/posts/update-post/${postId}`, {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: formData
+            });
+
+            if (response.ok) {
+                alert("Post updated successfully!");
+                window.location.href = '/ui/dashboard';
+            } else {
+                const err = await response.json();
+                // This triggers if the 2-hour window has passed
+                alert("Action Denied: " + (err.detail || "Update failed"));
+            }
+        } catch (error) {
+            alert("Network error: " + error.message);
+        }
+    };
+
+    // Initialize the page
+    loadPostData();
+</script>
+{% endblock %}
