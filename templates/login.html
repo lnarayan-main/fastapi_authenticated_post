@@ -5,15 +5,17 @@
 {% block subtitle %}Sign in to manage your posts{% endblock %}
 
 {% block content %}
+<div id="error-message" class="alert alert-danger d-none" role="alert"></div>
+<div id="success-message" class="alert alert-success d-none" role="alert"></div>
 <form id="login-form">
     <div class="mb-3">
         <label class="form-label">Email Address</label>
-        <input type="email" id="username" class="form-control form-control-lg" placeholder="name@example.com" required>
+        <input type="email" id="username" class="form-control form-control-lg" placeholder="Enter email" required autocomplete="off">
     </div>
     
     <div class="mb-3">
         <label class="form-label">Password</label>
-        <input type="password" id="password" class="form-control form-control-lg" placeholder="••••••••" required>
+        <input type="password" id="password" class="form-control form-control-lg" placeholder="password" required autocomplete="new-password">
     </div>
     
     <button type="submit" class="btn btn-primary btn-lg w-100 shadow-sm mt-3">Login</button>
@@ -26,8 +28,31 @@
 
 {% block scripts %}
 <script>
+    const validateForm = (data) => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(data.email)) {
+            return "Please enter a valid email address.";
+        }
+
+        if (data.password.length < 8) {
+            return "Password must be at least 8 characters long.";
+        }
+
+        return null; 
+    };
+
     document.getElementById('login-form').addEventListener('submit', async (e) => {
         e.preventDefault();
+        
+        const emailValue = document.getElementById('username').value;
+        const passwordValue = document.getElementById('password').value;
+
+        const validationError = validateForm({ email: emailValue, password: passwordValue });
+        if (validationError) {
+            showMessage(validationError);
+            return;
+        }
+
         const formData = new URLSearchParams();
         formData.append('username', document.getElementById('username').value);
         formData.append('password', document.getElementById('password').value);
@@ -46,11 +71,29 @@
                 window.location.href = '/ui/dashboard';
             } else {
                 const error = await response.json();
-                alert(error.detail || 'Login failed');
+                showMessage(error.detail || 'Login failed');
             }
         } catch (error) {
-            alert('Network error: ' + error.message);
+            showMessage('Network error: ' + error.message);
         }
     });
+
+    function showMessage(message, error=true) {
+        let msgDiv = null;
+        if(error){
+            msgDiv = document.getElementById('error-message');
+        }else {
+            msgDiv = document.getElementById('success-message');
+        }
+    
+        msgDiv.textContent = message;
+        msgDiv.classList.remove('d-none');
+        
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        setTimeout(() => {
+            msgDiv.classList.add('d-none');
+        }, 5000);
+    }
 </script>
 {% endblock %}
